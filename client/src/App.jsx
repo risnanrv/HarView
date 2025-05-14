@@ -45,18 +45,26 @@ function App() {
       // Create a pretty-printed version of the HAR data
       const prettyHar = JSON.stringify(data.har, null, 2);
       
-      // Create blob with the pretty-printed data
-      const blob = new Blob([prettyHar], { type: 'application/json' });
-      
       // Check if running on mobile
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
       if (isMobile) {
-        // For mobile devices, open in new tab
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        // For mobile devices, create a data URL
+        const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(prettyHar);
+        
+        // Create a temporary link element
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.setAttribute('download', `network-traffic-${new Date().toISOString().slice(0,10)}.har`);
+        link.setAttribute('target', '_blank');
+        
+        // Append to body, click, and remove
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       } else {
-        // For desktop, use download approach
+        // For desktop, use blob approach
+        const blob = new Blob([prettyHar], { type: 'application/json' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -68,6 +76,7 @@ function App() {
       }
     } catch (err) {
       setError(err.message);
+      console.error('Download error:', err);
     } finally {
       setIsGeneratingHAR(false);
     }

@@ -72,7 +72,7 @@ export default function Sidebar({
       <form onSubmit={handleSubmit} className="mb-4 md:mb-6">
         <div className="mb-4">
           <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-2">
-            Enter Website URL
+            Enter Website URL:
           </label>
           <input
             type="url"
