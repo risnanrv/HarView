@@ -70,7 +70,7 @@ export async function generateHar(url) {
       // Use networkidle2 and shorter timeout
       await page.goto(url, { 
         waitUntil: 'networkidle2',
-        timeout: 15000 // 15 seconds timeout
+        timeout: 30000 // 30 seconds timeout
       });
     } catch (navErr) {
       if (navErr.name === 'TimeoutError') {

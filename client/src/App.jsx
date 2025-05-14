@@ -47,14 +47,25 @@ function App() {
       
       // Create blob with the pretty-printed data
       const blob = new Blob([prettyHar], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `network-traffic-${new Date().toISOString().slice(0,10)}.har`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Check if running on mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // For mobile devices, open in new tab
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } else {
+        // For desktop, use download approach
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `network-traffic-${new Date().toISOString().slice(0,10)}.har`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
     } catch (err) {
       setError(err.message);
     } finally {

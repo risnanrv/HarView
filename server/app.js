@@ -4,8 +4,13 @@ import harRoutes from './routes/har.routes.js'; // ✅ add .js
 
 const app = express();
 
-// Enable CORS for all routes
-app.use(cors());
+// Enable CORS with specific configuration
+app.use(cors({
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 // Parse JSON bodies
 app.use(express.json());
