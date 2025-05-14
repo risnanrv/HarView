@@ -26,6 +26,9 @@ app.use((err, req, res, next) => {
 
 app.use('/api/har', harRoutes); // ✅ harRoutes must be a router
 
+app.get('/',(req,res)=>{
+  res.send('welcome')
+})
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
