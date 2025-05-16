@@ -5,6 +5,7 @@
   "type": "module",
   "main": "app.js",
   "scripts": {
+    "prestart": "node install-chrome.js",
     "start": "node app.js",
     "dev": "nodemon app.js"
   },

@@ -12,6 +12,7 @@ export async function generateHar(url) {
     console.log('Launching browser...');
     browser = await puppeteer.launch({ 
       headless: 'new',
+      executablePath: process.env.CHROME_BIN || null, // Use CHROME_BIN if available
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
