@@ -1,19 +1,50 @@
 import express from 'express';
 import cors from 'cors';
-import harRoutes from './routes/har.routes.js'; // ✅ add .js
+import multer from 'multer';
+import harRoutes from './routes/har.routes.js'; 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Enable CORS with specific configuration
+// Enable CORS for local development and production
 app.use(cors({
-  origin: '*', // Allow all origins
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'https://har-view.vercel.app'],
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type'],
   credentials: true
 }));
 
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'uploads'));
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/json' || file.originalname.endsWith('.har')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only HAR files are allowed'), false);
+    }
+  }
+});
+
+// Make upload middleware available to routes
+app.locals.upload = upload;
+
 // Parse JSON bodies
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -30,7 +61,7 @@ app.get('/',(req,res)=>{
   res.send('welcome')
 })
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4444;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

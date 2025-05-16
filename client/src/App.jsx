@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import FrameView from './components/FrameView';
 
@@ -21,14 +21,37 @@ function App() {
     setIsWebsiteLoaded(true);
   };
 
+  // Check if server is running
+  useEffect(() => {
+    const checkServer = async () => {
+      try {
+        const response = await fetch('http://localhost:4444', { 
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (response.ok) {
+          console.log('Server is running');
+        }
+      } catch (err) {
+        console.error('Server connection error:', err);
+        setError('Cannot connect to server. Please make sure the server is running on port 5000.');
+      }
+    };
+    
+    checkServer();
+  }, []);
+
   const handleDownloadHAR = async () => {
-    if (!iframeUrl) return;
+    if (!iframeUrl) {
+      setError('No website loaded. Please load a website first.');
+      return;
+    }
 
     setIsGeneratingHAR(true);
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/har/generate', {
+      const response = await fetch('http://localhost:4444/api/har/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,7 +60,8 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate HAR file');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to generate HAR file');
       }
 
       const data = await response.json();
@@ -48,6 +72,10 @@ function App() {
       // Check if running on mobile
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
+      // Extract hostname for filename
+      const hostname = new URL(iframeUrl).hostname;
+      const filename = `${hostname}-${new Date().toISOString().slice(0,10)}.har`;
+      
       if (isMobile) {
         // For mobile devices, create a data URL
         const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(prettyHar);
@@ -55,7 +83,7 @@ function App() {
         // Create a temporary link element
         const link = document.createElement('a');
         link.href = dataUrl;
-        link.setAttribute('download', `network-traffic-${new Date().toISOString().slice(0,10)}.har`);
+        link.setAttribute('download', filename);
         link.setAttribute('target', '_blank');
         
         // Append to body, click, and remove
@@ -68,7 +96,7 @@ function App() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `network-traffic-${new Date().toISOString().slice(0,10)}.har`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -89,20 +117,41 @@ function App() {
     formData.append('harFile', file);
 
     try {
-      const response = await fetch('http://localhost:5000/api/har/post', {
-        method: 'POST',
-        body: formData,
-      });
+      // First check if the file is a valid HAR file by reading it
+      const fileReader = new FileReader();
+      
+      fileReader.onload = async (e) => {
+        try {
+          // Try to parse the file as JSON
+          JSON.parse(e.target.result);
+          
+          // If parsing succeeds, upload the file
+          const response = await fetch('http://localhost:4444/api/har/post', {
+            method: 'POST',
+            body: formData,
+          });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload HAR file');
-      }
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to upload HAR file');
+          }
 
-      const result = await response.json();
-      alert('HAR file uploaded successfully!');
+          const result = await response.json();
+          console.log('HAR file uploaded successfully:', result);
+        } catch (parseErr) {
+          setError('Invalid HAR file format. Please upload a valid JSON HAR file.');
+          console.error('Parse error:', parseErr);
+        }
+      };
+      
+      fileReader.onerror = () => {
+        setError('Error reading the file. Please try again.');
+      };
+      
+      fileReader.readAsText(file);
     } catch (err) {
       setError(err.message);
-      alert('Error uploading HAR file: ' + err.message);
+      console.error('Upload error:', err);
     }
   };
 

@@ -11,25 +11,35 @@ export default function Sidebar({
   error
 }) {
   const [url, setUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
-  const [harData, setHarData] = useState(null);
-  const [postMessage, setPostMessage] = useState('');
-  const [showUpload, setShowUpload] = useState(false);
+  const [localError, setLocalError] = useState('');
   const [harStatus, setHarStatus] = useState('');
   const fileInputRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (url.trim()) {
-      onSubmit(url);
+      // Ensure URL has protocol
+      let processedUrl = url.trim();
+      if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+        processedUrl = 'https://' + processedUrl;
+      }
+      onSubmit(processedUrl);
+      setLocalError('');
+    } else {
+      setLocalError('Please enter a valid URL');
     }
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      onUploadHAR(file);
+      if (file.name.endsWith('.har')) {
+        onUploadHAR(file);
+        setHarStatus('HAR file uploaded successfully!');
+        setTimeout(() => setHarStatus(''), 3000);
+      } else {
+        setLocalError('Please select a valid HAR file (.har extension)');
+      }
       // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -37,37 +47,14 @@ export default function Sidebar({
     }
   };
 
-  const downloadHar = () => {
-    if (!harData) {
-      setError('No HAR data available. Please generate HAR first.');
-      return;
-    }
-    try {
-      const blob = new Blob([JSON.stringify(harData, null, 2)], { type: 'application/json' });
-      const href = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = href;
-      link.download = `${new URL(url).hostname}.har`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setHarStatus('HAR file downloaded successfully!');
-      setTimeout(() => setHarStatus(''), 3000);
-    } catch (err) {
-      setError('Failed to download HAR file.');
-    }
-  };
-
   const handlePostHarClick = () => {
-    setShowUpload(true);
-    setPostMessage('');
-    setError('');
+    setLocalError('');
     setTimeout(() => fileInputRef.current && fileInputRef.current.click(), 100);
   };
 
   return (
     <div className="w-full md:w-80 bg-white shadow-lg p-4 md:p-6 flex flex-col h-full overflow-y-auto">
-      {/* <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">HAR Viewer</h1> */}
+      <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">HAR Viewer MVP</h1>
       
       <form onSubmit={handleSubmit} className="mb-4 md:mb-6">
         <div className="mb-4">
@@ -75,11 +62,11 @@ export default function Sidebar({
             Enter Website URL:
           </label>
           <input
-            type="url"
+            type="text"
             id="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://example.com"
+            placeholder="example.com or https://example.com"
             className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
             required
           />
@@ -91,7 +78,7 @@ export default function Sidebar({
             isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {isLoading ? 'Loading...' : 'Submit'}
+          {isLoading ? 'Loading...' : 'Load Website'}
         </button>
       </form>
 
@@ -104,6 +91,7 @@ export default function Sidebar({
               ? 'bg-green-300 cursor-not-allowed'
               : 'bg-green-600 hover:bg-green-700'
           }`}
+          title="Generate and download HAR file for the loaded website"
         >
           {isGeneratingHAR ? 'Generating HAR...' : 'Download HAR'}
         </button>
@@ -120,15 +108,22 @@ export default function Sidebar({
           <label
             htmlFor="har-upload"
             className="block w-full py-2.5 px-4 rounded-md text-white font-medium bg-purple-600 hover:bg-purple-700 text-center cursor-pointer text-base"
+            title="Upload a HAR file to the server"
           >
-            Post HAR 
+            Post HAR
           </label>
         </div>
       </div>
 
-      {error && (
+      {harStatus && (
+        <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm">
+          {harStatus}
+        </div>
+      )}
+
+      {(error || localError) && (
         <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-          {error}
+          {error || localError}
         </div>
       )}
     </div>
