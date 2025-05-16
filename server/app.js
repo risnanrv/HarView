@@ -12,7 +12,13 @@ const app = express();
 
 // Enable CORS for local development and production
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'https://har-view.vercel.app'],
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    'https://har-view.vercel.app',
+    'https://your-production-frontend-url.com'  // Add your production frontend URL here
+  ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
   credentials: true

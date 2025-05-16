@@ -25,7 +25,7 @@ function App() {
   useEffect(() => {
     const checkServer = async () => {
       try {
-        const response = await fetch('http://localhost:4444', { 
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4444'}`, { 
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
@@ -34,7 +34,7 @@ function App() {
         }
       } catch (err) {
         console.error('Server connection error:', err);
-        setError('Cannot connect to server. Please make sure the server is running on port 5000.');
+        setError('Cannot connect to server. Please make sure the server is running.');
       }
     };
     
@@ -51,7 +51,7 @@ function App() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:4444/api/har/generate', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4444'}/api/har/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ function App() {
           JSON.parse(e.target.result);
           
           // If parsing succeeds, upload the file
-          const response = await fetch('http://localhost:4444/api/har/post', {
+          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4444'}/api/har/post`, {
             method: 'POST',
             body: formData,
           });
